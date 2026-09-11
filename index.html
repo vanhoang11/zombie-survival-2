@@ -1,1 +1,2383 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 
+<title>Zombie Survival</title>
+
+<style>
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#05080b;
+  font-family:Arial,sans-serif;
+  touch-action:none;
+}
+
+canvas{
+  display:block;
+  width:100%;
+  height:100%;
+}
+
+#loading{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:#05080b;
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  text-align:center;
+}
+
+#loading h1{
+  font-size:24px;
+  margin:0 0 10px;
+}
+
+#loading p{
+  color:#aaa;
+  margin:0;
+}
+
+#game{
+  position:fixed;
+  inset:0;
+  display:none;
+}
+
+#hud{
+  position:fixed;
+  top:12px;
+  left:12px;
+  right:12px;
+  z-index:20;
+  display:flex;
+  justify-content:space-between;
+  pointer-events:none;
+}
+
+.box{
+  background:rgba(0,0,0,.55);
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:12px;
+  padding:8px 12px;
+  color:white;
+  font-size:13px;
+  backdrop-filter:blur(5px);
+}
+
+#mission{
+  position:fixed;
+  top:75px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:20;
+  background:rgba(0,0,0,.55);
+  color:white;
+  padding:7px 15px;
+  border-radius:20px;
+  font-size:13px;
+  pointer-events:none;
+}
+
+#crosshair{
+  position:fixed;
+  left:50%;
+  top:50%;
+  width:34px;
+  height:34px;
+  transform:translate(-50%,-50%);
+  z-index:30;
+  pointer-events:none;
+}
+
+#crosshair:before,
+#crosshair:after{
+  content:"";
+  position:absolute;
+  background:white;
+  box-shadow:0 0 4px #000;
+}
+
+#crosshair:before{
+  width:2px;
+  height:34px;
+  left:16px;
+  top:0;
+}
+
+#crosshair:after{
+  width:34px;
+  height:2px;
+  left:0;
+  top:16px;
+}
+
+#crosshair.locked:before,
+#crosshair.locked:after{
+  background:#ff2020;
+  box-shadow:0 0 8px red;
+}
+
+#targetDot{
+  position:fixed;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:red;
+  display:none;
+  z-index:29;
+  pointer-events:none;
+  box-shadow:0 0 10px red;
+}
+
+#joystick{
+  position:fixed;
+  left:25px;
+  bottom:25px;
+  width:125px;
+  height:125px;
+  border-radius:50%;
+  background:rgba(255,255,255,.10);
+  border:2px solid rgba(255,255,255,.25);
+  z-index:40;
+}
+
+#stick{
+  position:absolute;
+  width:55px;
+  height:55px;
+  left:33px;
+  top:33px;
+  border-radius:50%;
+  background:rgba(255,255,255,.28);
+  border:2px solid rgba(255,255,255,.45);
+}
+
+#fire{
+  position:fixed;
+  right:25px;
+  bottom:35px;
+  width:100px;
+  height:100px;
+  border-radius:50%;
+  z-index:40;
+  border:2px solid rgba(255,255,255,.3);
+  background:rgba(210,30,30,.65);
+  color:white;
+  font-size:20px;
+  font-weight:bold;
+}
+
+#reload{
+  position:fixed;
+  right:140px;
+  bottom:45px;
+  width:80px;
+  height:50px;
+  z-index:40;
+  border:1px solid rgba(255,255,255,.3);
+  border-radius:12px;
+  background:rgba(0,0,0,.65);
+  color:white;
+  font-weight:bold;
+}
+
+#menuBtn{
+  position:fixed;
+  right:15px;
+  top:75px;
+  z-index:50;
+  width:45px;
+  height:45px;
+  border:0;
+  border-radius:12px;
+  background:rgba(0,0,0,.65);
+  color:white;
+  font-size:23px;
+}
+
+#weapon{
+  position:fixed;
+  bottom:-5px;
+  left:50%;
+  transform:translateX(-50%);
+  width:280px;
+  height:100px;
+  z-index:15;
+  pointer-events:none;
+}
+
+.gun{
+  position:absolute;
+  width:230px;
+  height:35px;
+  right:0;
+  bottom:35px;
+  background:linear-gradient(#333,#111);
+  border-radius:8px;
+  transform:rotate(-8deg);
+  box-shadow:0 0 15px #000;
+}
+
+.gun:before{
+  content:"";
+  position:absolute;
+  width:75px;
+  height:13px;
+  left:-65px;
+  top:11px;
+  background:#111;
+}
+
+.gun:after{
+  content:"";
+  position:absolute;
+  width:38px;
+  height:55px;
+  right:45px;
+  top:25px;
+  background:#171717;
+  transform:rotate(12deg);
+  border-radius:5px;
+}
+
+#muzzle{
+  position:absolute;
+  left:18px;
+  top:5px;
+  width:25px;
+  height:25px;
+  border-radius:50%;
+  background:#ffdb55;
+  box-shadow:0 0 30px #ff8000;
+  display:none;
+}
+
+#menu{
+  position:fixed;
+  inset:0;
+  z-index:100;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,.72);
+}
+
+.panel{
+  width:min(420px,90vw);
+  padding:25px;
+  border-radius:20px;
+  background:#111820;
+  color:white;
+  border:1px solid #35414d;
+  text-align:center;
+}
+
+.panel h1{
+  margin-top:0;
+}
+
+.panel button,
+.panel input{
+  width:100%;
+  padding:13px;
+  margin-top:10px;
+  border-radius:10px;
+  border:0;
+}
+
+.panel input{
+  background:#202a34;
+  color:white;
+}
+
+.panel button{
+  background:#e21e2b;
+  color:white;
+  font-weight:bold;
+}
+
+#gameover{
+  position:fixed;
+  inset:0;
+  z-index:90;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,.8);
+}
+
+#toast{
+  position:fixed;
+  left:50%;
+  bottom:155px;
+  transform:translateX(-50%);
+  z-index:80;
+  color:white;
+  background:rgba(0,0,0,.75);
+  padding:10px 18px;
+  border-radius:20px;
+  display:none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="loading">
+  <h1>ĐANG TẢI ZOMBIE SURVIVAL...</h1>
+  <p>Chuẩn bị chiến đấu</p>
+</div>
+
+<div id="game">
+
+<canvas id="canvas"></canvas>
+
+<div id="hud">
+  <div>
+    <div class="box">❤️ HP: <b id="hp">100</b></div>
+    <div class="box">🔫 Đạn: <b id="ammo">120</b>/120</div>
+  </div>
+
+  <div style="text-align:right">
+    <div class="box">🧟 Kill: <b id="kills">0</b></div>
+    <div class="box">🏆 Điểm: <b id="score">0</b></div>
+    <div class="box">⭐ Sao: <b id="stars">1</b></div>
+  </div>
+</div>
+
+<div id="mission">
+  Màn <b id="match">1</b> |
+  Hạ <b id="missionKills">0</b>/<b id="missionTarget">10</b> |
+  ⏱️ <b id="time">180</b>s
+</div>
+
+<div id="crosshair"></div>
+<div id="targetDot"></div>
+
+<div id="joystick">
+  <div id="stick"></div>
+</div>
+
+<button id="fire">BẮN</button>
+<button id="reload">NẠP</button>
+<button id="menuBtn">☰</button>
+
+<div id="weapon">
+  <div class="gun">
+    <div id="muzzle"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div id="menu">
+  <div class="panel">
+    <h1>☠️ ZOMBIE SURVIVAL</h1>
+
+    <input id="nameInput"
+           maxlength="20"
+           placeholder="Tên người chơi">
+
+    <button id="startBtn">BẮT ĐẦU</button>
+    <button id="closeMenu">ĐÓNG</button>
+  </div>
+</div>
+
+<div id="gameover">
+  <div class="panel">
+    <h1 id="overTitle">GAME OVER</h1>
+    <p>Kill: <b id="overKills">0</b></p>
+    <p>Điểm: <b id="overScore">0</b></p>
+    <p>Sao: <b id="overStars">1</b></p>
+    <button id="again">CHƠI LẠI</button>
+  </div>
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+"use strict";
+
+/* =========================================================
+   SUPABASE
+========================================================= */
+
+const SUPABASE_URL =
+"https://iluxyjrukvvixrohtawj.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_omY3B4G7a3LwtiTRLl3aeQ_yqwwp4D1";
+
+/* =========================================================
+   DOM
+========================================================= */
+
+const loading = document.getElementById("loading");
+const game = document.getElementById("game");
+
+const hpEl = document.getElementById("hp");
+const ammoEl = document.getElementById("ammo");
+const killsEl = document.getElementById("kills");
+const scoreEl = document.getElementById("score");
+const starsEl = document.getElementById("stars");
+
+const matchEl = document.getElementById("match");
+const missionKillsEl =
+document.getElementById("missionKills");
+
+const missionTargetEl =
+document.getElementById("missionTarget");
+
+const timeEl = document.getElementById("time");
+
+const crosshair =
+document.getElementById("crosshair");
+
+const targetDot =
+document.getElementById("targetDot");
+
+const toast =
+document.getElementById("toast");
+
+const muzzle =
+document.getElementById("muzzle");
+
+/* =========================================================
+   GAME STATE
+========================================================= */
+
+let scene;
+let camera;
+let renderer;
+
+let player;
+let zombies = [];
+let bullets = [];
+let particles = [];
+
+let running = false;
+let gameEnded = false;
+
+let hp = 100;
+let ammo = 120;
+let kills = 0;
+let score = 0;
+
+let match =
+Number(localStorage.getItem("zs_match") || 1);
+
+let stars =
+Number(localStorage.getItem("zs_stars") || 1);
+
+let playerName =
+localStorage.getItem("zs_name") || "";
+
+let timeLeft = 180;
+
+let targetZombie = null;
+
+let shootCooldown = 0;
+let spawnTimer = 0;
+let damageTimer = 0;
+let reloadTimer = 0;
+
+let cameraYaw = 0;
+let cameraPitch = 0.15;
+
+/* =========================================================
+   MISSION
+========================================================= */
+
+function getMissionTarget(m){
+
+  if(m === 1) return 10;
+  if(m === 2) return 15;
+  if(m === 3) return 20;
+  if(m === 4) return 30;
+  if(m === 5) return 40;
+  if(m === 6) return 50;
+  if(m === 7) return 65;
+  if(m === 8) return 80;
+  if(m === 9) return 100;
+  if(m === 10) return 120;
+
+  if(m <= 20){
+    return Math.round(
+      120 + (m - 10) * 13
+    );
+  }
+
+  if(m <= 50){
+    return Math.round(
+      250 + (m - 20) * 11.67
+    );
+  }
+
+  if(m <= 100){
+    return Math.round(
+      600 + (m - 50) * 10
+    );
+  }
+
+  if(m <= 150){
+    return Math.round(
+      1100 + (m - 100) * 10
+    );
+  }
+
+  if(m <= 200){
+    return Math.round(
+      1600 + (m - 150) * 8
+    );
+  }
+
+  return 2000;
+}
+
+function getRank(s){
+
+  if(s >= 999) return "☠️ SIÊU CAO THỦ";
+  if(s >= 800) return "⚡ ĐẠI CAO THỦ";
+  if(s >= 600) return "👑 CAO THỦ";
+  if(s >= 400) return "🔥 KIM CƯƠNG";
+  if(s >= 200) return "💎 BẠCH KIM";
+  if(s >= 100) return "🥇 VÀNG";
+  if(s >= 50) return "🥈 BẠC";
+  if(s >= 10) return "🥉 ĐỒNG";
+
+  return "🪵 TÂN BINH";
+}
+
+/* =========================================================
+   THREE.JS INIT
+========================================================= */
+
+function init(){
+
+  scene =
+  new THREE.Scene();
+
+  scene.background =
+  new THREE.Color(0x05080b);
+
+  scene.fog =
+  new THREE.Fog(
+    0x071016,
+    35,
+    130
+  );
+
+  camera =
+  new THREE.PerspectiveCamera(
+    65,
+    innerWidth / innerHeight,
+    .1,
+    300
+  );
+
+  renderer =
+  new THREE.WebGLRenderer({
+    canvas:document.getElementById("canvas"),
+    antialias:false,
+    powerPreference:"high-performance"
+  });
+
+  renderer.setPixelRatio(
+    Math.min(devicePixelRatio,1.5)
+  );
+
+  renderer.setSize(
+    innerWidth,
+    innerHeight
+  );
+
+  renderer.shadowMap.enabled = false;
+
+  createLights();
+  createWorld();
+  createPlayer();
+
+  window.addEventListener(
+    "resize",
+    resize
+  );
+
+  setupControls();
+
+  updateHUD();
+
+  loading.style.display="none";
+  game.style.display="block";
+
+  running=true;
+
+  startMatch();
+
+  animate();
+}
+
+/* =========================================================
+   LIGHT
+========================================================= */
+
+function createLights(){
+
+  const hemi =
+  new THREE.HemisphereLight(
+    0x8aaaff,
+    0x111111,
+    1.5
+  );
+
+  scene.add(hemi);
+
+  const moon =
+  new THREE.DirectionalLight(
+    0xaac8ff,
+    1.5
+  );
+
+  moon.position.set(
+    30,
+    50,
+    20
+  );
+
+  scene.add(moon);
+}
+
+/* =========================================================
+   WORLD
+========================================================= */
+
+function createWorld(){
+
+  const groundMat =
+  new THREE.MeshLambertMaterial({
+    color:0x20282b
+  });
+
+  const ground =
+  new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      260,
+      260
+    ),
+    groundMat
+  );
+
+  ground.rotation.x=-Math.PI/2;
+
+  scene.add(ground);
+
+  /* ĐƯỜNG */
+
+  const roadMat =
+  new THREE.MeshLambertMaterial({
+    color:0x111518
+  });
+
+  const road =
+  new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      24,
+      260
+    ),
+    roadMat
+  );
+
+  road.rotation.x=-Math.PI/2;
+  road.position.y=.01;
+
+  scene.add(road);
+
+  /* VẠCH ĐƯỜNG */
+
+  for(let z=-120;z<120;z+=8){
+
+    const line =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        .3,
+        .03,
+        4
+      ),
+      new THREE.MeshBasicMaterial({
+        color:0xc9c9c9
+      })
+    );
+
+    line.position.set(
+      0,
+      .03,
+      z
+    );
+
+    scene.add(line);
+  }
+
+  /* NHÀ */
+
+  for(let i=0;i<18;i++){
+
+    const side =
+    i%2===0 ? -1 : 1;
+
+    const z =
+    -100 + i*12;
+
+    createHouse(
+      side*28,
+      z
+    );
+  }
+
+  /* CÂY */
+
+  for(let i=0;i<45;i++){
+
+    const x =
+    (Math.random()<.5?-1:1) *
+    (18+Math.random()*45);
+
+    const z =
+    -115 + Math.random()*230;
+
+    createTree(x,z);
+  }
+
+  /* ĐÁ */
+
+  for(let i=0;i<35;i++){
+
+    const x =
+    (Math.random()-.5)*120;
+
+    const z =
+    (Math.random()-.5)*220;
+
+    if(Math.abs(x)<15) continue;
+
+    createRock(x,z);
+  }
+}
+
+/* =========================================================
+   HOUSE
+========================================================= */
+
+function createHouse(x,z){
+
+  const body =
+  new THREE.Mesh(
+    new THREE.BoxGeometry(
+      12,
+      8,
+      12
+    ),
+    new THREE.MeshLambertMaterial({
+      color:
+      new THREE.Color().setHSL(
+        Math.random(),
+        .15,
+        .25
+      )
+    })
+  );
+
+  body.position.set(
+    x,
+    4,
+    z
+  );
+
+  scene.add(body);
+
+  const roof =
+  new THREE.Mesh(
+    new THREE.ConeGeometry(
+      9,
+      4,
+      4
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x252a30
+    })
+  );
+
+  roof.position.set(
+    x,
+    10,
+    z
+  );
+
+  roof.rotation.y=Math.PI/4;
+
+  scene.add(roof);
+}
+
+/* =========================================================
+   TREE
+========================================================= */
+
+function createTree(x,z){
+
+  const trunk =
+  new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      .6,
+      .8,
+      5,
+      8
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x513b28
+    })
+  );
+
+  trunk.position.set(
+    x,
+    2.5,
+    z
+  );
+
+  scene.add(trunk);
+
+  const leaves =
+  new THREE.Mesh(
+    new THREE.SphereGeometry(
+      3.8,
+      8,
+      8
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x172b1d
+    })
+  );
+
+  leaves.position.set(
+    x,
+    6,
+    z
+  );
+
+  scene.add(leaves);
+}
+
+/* =========================================================
+   ROCK
+========================================================= */
+
+function createRock(x,z){
+
+  const rock =
+  new THREE.Mesh(
+    new THREE.DodecahedronGeometry(
+      .7+Math.random()*1.2,
+      0
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x44484a
+    })
+  );
+
+  rock.position.set(
+    x,
+    .6,
+    z
+  );
+
+  scene.add(rock);
+}
+
+/* =========================================================
+   PLAYER
+========================================================= */
+
+function createPlayer(){
+
+  player =
+  new THREE.Group();
+
+  /* BODY */
+
+  const body =
+  new THREE.Mesh(
+    new THREE.CapsuleGeometry(
+      .65,
+      1.6,
+      4,
+      8
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x303842
+    })
+  );
+
+  body.position.y=1.25;
+
+  player.add(body);
+
+  /* HEAD */
+
+  const head =
+  new THREE.Mesh(
+    new THREE.SphereGeometry(
+      .42,
+      12,
+      12
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0xc58f72
+    })
+  );
+
+  head.position.y=2.55;
+
+  player.add(head);
+
+  player.position.set(
+    0,
+    0,
+    25
+  );
+
+  scene.add(player);
+}
+
+/* =========================================================
+   ZOMBIE
+========================================================= */
+
+function createZombie(){
+
+  const z =
+  new THREE.Group();
+
+  const body =
+  new THREE.Mesh(
+    new THREE.CapsuleGeometry(
+      .6,
+      1.4,
+      4,
+      8
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x566b55
+    })
+  );
+
+  body.position.y=1.2;
+
+  z.add(body);
+
+  const head =
+  new THREE.Mesh(
+    new THREE.SphereGeometry(
+      .42,
+      10,
+      10
+    ),
+    new THREE.MeshLambertMaterial({
+      color:0x73876d
+    })
+  );
+
+  head.position.y=2.35;
+
+  z.add(head);
+
+  /* MÁU */
+
+  const barBack =
+  new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      1.5,
+      .14
+    ),
+    new THREE.MeshBasicMaterial({
+      color:0x330000,
+      side:THREE.DoubleSide
+    })
+  );
+
+  barBack.position.y=3.1;
+
+  z.add(barBack);
+
+  const bar =
+  new THREE.Mesh(
+    new THREE.PlaneGeometry(
+      1.5,
+      .14
+    ),
+    new THREE.MeshBasicMaterial({
+      color:0xff2222,
+      side:THREE.DoubleSide
+    })
+  );
+
+  bar.position.y=3.1;
+  bar.position.z=.01;
+
+  z.add(bar);
+
+  const angle =
+  Math.random()*Math.PI*2;
+
+  const distance =
+  18+Math.random()*45;
+
+  z.position.set(
+    player.position.x+
+    Math.sin(angle)*distance,
+
+    0,
+
+    player.position.z+
+    Math.cos(angle)*distance
+  );
+
+  z.userData={
+    hp:5,
+    maxHp:5,
+    bar:bar,
+    speed:
+      1.5+
+      Math.min(match*.02,2.5),
+    dead:false
+  };
+
+  scene.add(z);
+  zombies.push(z);
+}
+
+/* =========================================================
+   START MATCH
+========================================================= */
+
+function startMatch(){
+
+  clearZombies();
+
+  hp=100;
+  ammo=120;
+  kills=0;
+  score=0;
+
+  timeLeft=180;
+
+  gameEnded=false;
+
+  targetZombie=null;
+
+  matchEl.textContent=match;
+
+  missionTargetEl.textContent =
+    getMissionTarget(match);
+
+  missionKillsEl.textContent="0";
+
+  updateHUD();
+
+  for(let i=0;i<6;i++){
+    createZombie();
+  }
+}
+
+/* =========================================================
+   CLEAR ZOMBIES
+========================================================= */
+
+function clearZombies(){
+
+  zombies.forEach(z=>{
+    scene.remove(z);
+  });
+
+  zombies=[];
+}
+
+/* =========================================================
+   FIND TARGET
+========================================================= */
+
+function findTarget(){
+
+  let best=null;
+  let bestScore=Infinity;
+
+  const center =
+  new THREE.Vector2(0,0);
+
+  for(const z of zombies){
+
+    if(z.userData.dead) continue;
+
+    const distance =
+    player.position.distanceTo(
+      z.position
+    );
+
+    /* CHỈ AUTO AIM KHI ZOMBIE GẦN */
+
+    if(distance>38) continue;
+
+    const pos =
+    z.position.clone();
+
+    pos.y=1.7;
+
+    pos.project(camera);
+
+    const screenDistance =
+    Math.sqrt(
+      pos.x*pos.x+
+      pos.y*pos.y
+    );
+
+    /*
+      ƯU TIÊN ZOMBIE GẦN TÂM MÀN HÌNH
+    */
+
+    const value =
+    screenDistance*3+
+    distance*.025;
+
+    if(value<bestScore){
+
+      bestScore=value;
+      best=z;
+    }
+  }
+
+  return best;
+}
+
+/* =========================================================
+   AIM
+========================================================= */
+
+function updateTarget(){
+
+  targetZombie =
+  findTarget();
+
+  if(targetZombie){
+
+    crosshair.classList.add(
+      "locked"
+    );
+
+    const p =
+    targetZombie.position.clone();
+
+    p.y=1.7;
+
+    p.project(camera);
+
+    const sx =
+    (p.x*.5+.5)*innerWidth;
+
+    const sy =
+    (-p.y*.5+.5)*innerHeight;
+
+    targetDot.style.display="block";
+
+    targetDot.style.left =
+    (sx-3.5)+"px";
+
+    targetDot.style.top =
+    (sy-3.5)+"px";
+
+  }else{
+
+    crosshair.classList.remove(
+      "locked"
+    );
+
+    targetDot.style.display="none";
+  }
+}
+
+/* =========================================================
+   SHOOT
+========================================================= */
+
+function shoot(){
+
+  if(!running || gameEnded) return;
+
+  if(reloadTimer>0) return;
+
+  if(ammo<=0){
+
+    showToast("Hết đạn - bấm NẠP");
+    return;
+  }
+
+  if(shootCooldown>0) return;
+
+  shootCooldown=.16;
+
+  ammo--;
+
+  updateHUD();
+
+  muzzle.style.display="block";
+
+  setTimeout(()=>{
+    muzzle.style.display="none";
+  },70);
+
+  /* CÓ MỤC TIÊU -> ĐẠN GHIM */
+
+  if(targetZombie){
+
+    createHomingBullet(
+      targetZombie
+    );
+
+  }else{
+
+    createStraightBullet();
+  }
+
+  playGunSound();
+}
+
+/* =========================================================
+   HOMING BULLET
+========================================================= */
+
+function createHomingBullet(target){
+
+  const start =
+  new THREE.Vector3(
+    player.position.x,
+    1.6,
+    player.position.z
+  );
+
+  const bullet =
+  new THREE.Mesh(
+    new THREE.SphereGeometry(
+      .09,
+      6,
+      6
+    ),
+    new THREE.MeshBasicMaterial({
+      color:0xffd84d
+    })
+  );
+
+  bullet.position.copy(start);
+
+  bullet.userData={
+    target,
+    speed:32,
+    life:2,
+    homing:true
+  };
+
+  scene.add(bullet);
+  bullets.push(bullet);
+}
+
+/* =========================================================
+   STRAIGHT BULLET
+========================================================= */
+
+function createStraightBullet(){
+
+  const direction =
+  new THREE.Vector3(
+    0,
+    0,
+    -1
+  );
+
+  direction.applyQuaternion(
+    camera.quaternion
+  );
+
+  const bullet =
+  new THREE.Mesh(
+    new THREE.SphereGeometry(
+      .08,
+      6,
+      6
+    ),
+    new THREE.MeshBasicMaterial({
+      color:0xffdd55
+    })
+  );
+
+  bullet.position.copy(
+    camera.position
+  );
+
+  bullet.userData={
+    direction,
+    speed:55,
+    life:1,
+    homing:false
+  };
+
+  scene.add(bullet);
+  bullets.push(bullet);
+}
+
+/* =========================================================
+   UPDATE BULLETS
+========================================================= */
+
+function updateBullets(dt){
+
+  for(let i=bullets.length-1;i>=0;i--){
+
+    const b=bullets[i];
+
+    b.userData.life-=dt;
+
+    if(b.userData.life<=0){
+
+      scene.remove(b);
+      bullets.splice(i,1);
+      continue;
+    }
+
+    if(
+      b.userData.homing &&
+      b.userData.target &&
+      !b.userData.target.userData.dead
+    ){
+
+      const target =
+      b.userData.target.position.clone();
+
+      target.y=1.6;
+
+      const dir =
+      target.clone()
+      .sub(b.position)
+      .normalize();
+
+      b.position.add(
+        dir.multiplyScalar(
+          b.userData.speed*dt
+        )
+      );
+
+    }else{
+
+      b.position.add(
+        b.userData.direction
+        .clone()
+        .multiplyScalar(
+          b.userData.speed*dt
+        )
+      );
+    }
+
+    /* HIT ZOMBIE */
+
+    for(const z of zombies){
+
+      if(z.userData.dead) continue;
+
+      const d =
+      b.position.distanceTo(
+        z.position.clone().setY(
+          b.position.y
+        )
+      );
+
+      if(d<1.15){
+
+        hitZombie(z);
+
+        scene.remove(b);
+        bullets.splice(i,1);
+
+        break;
+      }
+    }
+  }
+}
+
+/* =========================================================
+   HIT ZOMBIE
+========================================================= */
+
+function hitZombie(z){
+
+  z.userData.hp--;
+
+  const hpPercent =
+  Math.max(
+    0,
+    z.userData.hp/
+    z.userData.maxHp
+  );
+
+  z.userData.bar.scale.x =
+  hpPercent;
+
+  createHitEffect(
+    z.position.clone()
+  );
+
+  if(z.userData.hp<=0){
+
+    killZombie(z);
+  }
+}
+
+/* =========================================================
+   KILL
+========================================================= */
+
+function killZombie(z){
+
+  if(z.userData.dead) return;
+
+  z.userData.dead=true;
+
+  kills++;
+  score+=100;
+
+  missionKillsEl.textContent=
+  kills;
+
+  createDeathEffect(
+    z.position.clone()
+  );
+
+  scene.remove(z);
+
+  const index =
+  zombies.indexOf(z);
+
+  if(index>=0){
+    zombies.splice(index,1);
+  }
+
+  const target =
+  getMissionTarget(match);
+
+  if(kills>=target){
+
+    winMatch();
+  }
+
+  updateHUD();
+}
+
+/* =========================================================
+   ZOMBIE UPDATE
+========================================================= */
+
+function updateZombies(dt){
+
+  damageTimer-=dt;
+
+  for(const z of zombies){
+
+    if(z.userData.dead) continue;
+
+    const direction =
+    player.position
+    .clone()
+    .sub(z.position);
+
+    direction.y=0;
+
+    const distance =
+    direction.length();
+
+    if(distance>1.7){
+
+      direction.normalize();
+
+      z.position.add(
+        direction.multiplyScalar(
+          z.userData.speed*dt
+        )
+      );
+
+      z.rotation.y =
+      Math.atan2(
+        direction.x,
+        direction.z
+      );
+
+    }else{
+
+      if(damageTimer<=0){
+
+        hp-=8;
+        damageTimer=.7;
+
+        updateHUD();
+
+        if(hp<=0){
+          loseMatch();
+        }
+      }
+    }
+
+    /* thanh máu quay về camera */
+
+    z.userData.bar.parent.rotation.y =
+    camera.rotation.y;
+  }
+}
+
+/* =========================================================
+   SPAWN
+========================================================= */
+
+function updateSpawn(dt){
+
+  spawnTimer-=dt;
+
+  const maxZombies =
+  Math.min(
+    8+match*2,
+    35
+  );
+
+  if(
+    spawnTimer<=0 &&
+    zombies.length<maxZombies
+  ){
+
+    createZombie();
+
+    spawnTimer =
+    Math.max(
+      .4,
+      2.5-match*.01
+    );
+  }
+}
+
+/* =========================================================
+   PLAYER MOVEMENT
+========================================================= */
+
+let joyX=0;
+let joyY=0;
+
+function updatePlayer(dt){
+
+  if(
+    Math.abs(joyX)<.05 &&
+    Math.abs(joyY)<.05
+  ) return;
+
+  /*
+    JOYSTICK LÊN:
+    ĐI TỚI
+
+    JOYSTICK XUỐNG:
+    ĐI LÙI
+  */
+
+  const forward =
+  new THREE.Vector3(
+    -Math.sin(cameraYaw),
+    0,
+    -Math.cos(cameraYaw)
+  );
+
+  const right =
+  new THREE.Vector3(
+    Math.cos(cameraYaw),
+    0,
+    -Math.sin(cameraYaw)
+  );
+
+  const move =
+  forward
+  .multiplyScalar(-joyY)
+  .add(
+    right.multiplyScalar(joyX)
+  );
+
+  if(move.length()>0){
+
+    move.normalize();
+
+    const speed=7;
+
+    player.position.add(
+      move.multiplyScalar(
+        speed*dt
+      )
+    );
+  }
+}
+
+/* =========================================================
+   CAMERA
+========================================================= */
+
+function updateCamera(){
+
+  const distance=6;
+
+  const height=3.2;
+
+  const x =
+  player.position.x -
+  Math.sin(cameraYaw)*distance;
+
+  const z =
+  player.position.z -
+  Math.cos(cameraYaw)*distance;
+
+  camera.position.set(
+    x,
+    player.position.y+
+    height+
+    Math.sin(cameraPitch)*2,
+    z
+  );
+
+  const look =
+  player.position.clone();
+
+  look.y+=1.5;
+
+  camera.lookAt(look);
+}
+
+/* =========================================================
+   JOYSTICK
+========================================================= */
+
+function setupJoystick(){
+
+  const base =
+  document.getElementById("joystick");
+
+  const stick =
+  document.getElementById("stick");
+
+  let active=false;
+
+  function move(e){
+
+    if(!active) return;
+
+    const r =
+    base.getBoundingClientRect();
+
+    const cx =
+    r.left+r.width/2;
+
+    const cy =
+    r.top+r.height/2;
+
+    const px =
+    e.clientX-cx;
+
+    const py =
+    e.clientY-cy;
+
+    const max=35;
+
+    const len =
+    Math.sqrt(px*px+py*py);
+
+    const scale =
+    len>max ? max/len : 1;
+
+    const x=px*scale;
+    const y=py*scale;
+
+    stick.style.transform =
+    `translate(${x}px,${y}px)`;
+
+    joyX=x/max;
+
+    /*
+      y âm = đẩy lên
+      => joyY âm
+    */
+
+    joyY=y/max;
+  }
+
+  function end(){
+
+    active=false;
+
+    stick.style.transform=
+    "translate(0,0)";
+
+    joyX=0;
+    joyY=0;
+  }
+
+  base.addEventListener(
+    "pointerdown",
+    e=>{
+      active=true;
+      base.setPointerCapture(e.pointerId);
+      move(e);
+    }
+  );
+
+  base.addEventListener(
+    "pointermove",
+    move
+  );
+
+  base.addEventListener(
+    "pointerup",
+    end
+  );
+
+  base.addEventListener(
+    "pointercancel",
+    end
+  );
+}
+
+/* =========================================================
+   CAMERA SWIPE
+========================================================= */
+
+function setupCameraSwipe(){
+
+  let active=false;
+  let lastX=0;
+
+  document.addEventListener(
+    "pointerdown",
+    e=>{
+
+      if(
+        e.target.closest("#joystick") ||
+        e.target.closest("#fire") ||
+        e.target.closest("#reload") ||
+        e.target.closest("#menuBtn")
+      ) return;
+
+      if(e.clientX<
+        innerWidth*.45
+      ) return;
+
+      active=true;
+      lastX=e.clientX;
+    }
+  );
+
+  document.addEventListener(
+    "pointermove",
+    e=>{
+
+      if(!active) return;
+
+      const dx =
+      e.clientX-lastX;
+
+      lastX=e.clientX;
+
+      cameraYaw -=
+      dx*.006;
+    }
+  );
+
+  document.addEventListener(
+    "pointerup",
+    ()=>{
+      active=false;
+    }
+  );
+}
+
+/* =========================================================
+   CONTROLS
+========================================================= */
+
+function setupControls(){
+
+  setupJoystick();
+  setupCameraSwipe();
+
+  document.getElementById(
+    "fire"
+  ).addEventListener(
+    "pointerdown",
+    e=>{
+      e.preventDefault();
+      shoot();
+    }
+  );
+
+  document.getElementById(
+    "reload"
+  ).addEventListener(
+    "pointerdown",
+    e=>{
+      e.preventDefault();
+      reload();
+    }
+  );
+
+  document.getElementById(
+    "menuBtn"
+  ).onclick=()=>{
+    document.getElementById(
+      "menu"
+    ).style.display="flex";
+  };
+
+  document.getElementById(
+    "closeMenu"
+  ).onclick=()=>{
+    document.getElementById(
+      "menu"
+    ).style.display="none";
+  };
+
+  document.getElementById(
+    "startBtn"
+  ).onclick=()=>{
+
+    const input =
+    document.getElementById(
+      "nameInput"
+    );
+
+    if(input.value.trim()){
+      playerName=
+      input.value.trim();
+
+      localStorage.setItem(
+        "zs_name",
+        playerName
+      );
+    }
+
+    document.getElementById(
+      "menu"
+    ).style.display="none";
+
+    if(!running){
+      running=true;
+      startMatch();
+    }
+  };
+
+  document.getElementById(
+    "again"
+  ).onclick=()=>{
+
+    document.getElementById(
+      "gameover"
+    ).style.display="none";
+
+    running=true;
+
+    startMatch();
+  };
+
+  document.getElementById(
+    "nameInput"
+  ).value=playerName;
+}
+
+/* =========================================================
+   RELOAD
+========================================================= */
+
+function reload(){
+
+  if(reloadTimer>0) return;
+
+  if(ammo>=120) return;
+
+  reloadTimer=1.2;
+
+  showToast("Đang nạp đạn...");
+
+  setTimeout(()=>{
+
+    ammo=120;
+    reloadTimer=0;
+
+    updateHUD();
+
+  },1200);
+}
+
+/* =========================================================
+   WIN
+========================================================= */
+
+function winMatch(){
+
+  if(gameEnded) return;
+
+  gameEnded=true;
+
+  stars++;
+
+  localStorage.setItem(
+    "zs_stars",
+    stars
+  );
+
+  match++;
+
+  localStorage.setItem(
+    "zs_match",
+    match
+  );
+
+  showToast(
+    "🎉 THẮNG! +1 SAO"
+  );
+
+  setTimeout(()=>{
+
+    gameEnded=false;
+    startMatch();
+
+  },1300);
+}
+
+/* =========================================================
+   LOSE
+========================================================= */
+
+function loseMatch(){
+
+  if(gameEnded) return;
+
+  gameEnded=true;
+  running=false;
+
+  document.getElementById(
+    "overTitle"
+  ).textContent="☠️ BẠN ĐÃ CHẾT";
+
+  document.getElementById(
+    "overKills"
+  ).textContent=kills;
+
+  document.getElementById(
+    "overScore"
+  ).textContent=score;
+
+  document.getElementById(
+    "overStars"
+  ).textContent=
+    stars>=999
+    ?"999+"
+    :stars;
+
+  document.getElementById(
+    "gameover"
+  ).style.display="flex";
+
+  saveScore();
+}
+
+/* =========================================================
+   TIMER
+========================================================= */
+
+let lastTime=performance.now();
+
+function updateTimer(dt){
+
+  if(gameEnded) return;
+
+  timeLeft-=dt;
+
+  if(timeLeft<=0){
+
+    timeLeft=0;
+
+    loseMatch();
+  }
+
+  timeEl.textContent=
+  Math.ceil(timeLeft);
+}
+
+/* =========================================================
+   HUD
+========================================================= */
+
+function updateHUD(){
+
+  hpEl.textContent=
+  Math.max(0,Math.floor(hp));
+
+  ammoEl.textContent=
+  ammo;
+
+  killsEl.textContent=
+  kills;
+
+  scoreEl.textContent=
+  score;
+
+  starsEl.textContent=
+  stars>=999
+  ?"999+"
+  :stars;
+
+  matchEl.textContent=
+  match;
+
+  missionKillsEl.textContent=
+  kills;
+
+  missionTargetEl.textContent=
+  getMissionTarget(match);
+
+  timeEl.textContent=
+  Math.ceil(timeLeft);
+}
+
+/* =========================================================
+   EFFECT
+========================================================= */
+
+function createHitEffect(pos){
+
+  for(let i=0;i<4;i++){
+
+    const p =
+    new THREE.Mesh(
+      new THREE.SphereGeometry(
+        .08,
+        5,
+        5
+      ),
+      new THREE.MeshBasicMaterial({
+        color:0xff3333
+      })
+    );
+
+    p.position.copy(pos);
+
+    p.userData={
+      life:.4,
+      velocity:
+      new THREE.Vector3(
+        (Math.random()-.5)*4,
+        Math.random()*4,
+        (Math.random()-.5)*4
+      )
+    };
+
+    scene.add(p);
+    particles.push(p);
+  }
+}
+
+function createDeathEffect(pos){
+
+  for(let i=0;i<12;i++){
+
+    const p =
+    new THREE.Mesh(
+      new THREE.SphereGeometry(
+        .1,
+        5,
+        5
+      ),
+      new THREE.MeshBasicMaterial({
+        color:
+        i%2
+        ?0xff2222
+        :0xaaaaaa
+      })
+    );
+
+    p.position.copy(pos);
+
+    p.userData={
+      life:.8,
+      velocity:
+      new THREE.Vector3(
+        (Math.random()-.5)*7,
+        Math.random()*7,
+        (Math.random()-.5)*7
+      )
+    };
+
+    scene.add(p);
+    particles.push(p);
+  }
+}
+
+function updateParticles(dt){
+
+  for(let i=particles.length-1;i>=0;i--){
+
+    const p=particles[i];
+
+    p.userData.life-=dt;
+
+    p.position.add(
+      p.userData.velocity
+      .clone()
+      .multiplyScalar(dt)
+    );
+
+    p.userData.velocity.y-=8*dt;
+
+    if(p.userData.life<=0){
+
+      scene.remove(p);
+      particles.splice(i,1);
+    }
+  }
+}
+
+/* =========================================================
+   GUN SOUND
+========================================================= */
+
+let audioCtx=null;
+
+function playGunSound(){
+
+  try{
+
+    if(!audioCtx){
+      audioCtx=
+      new AudioContext();
+    }
+
+    const osc=
+    audioCtx.createOscillator();
+
+    const gain=
+    audioCtx.createGain();
+
+    osc.type="sawtooth";
+
+    osc.frequency.value=120;
+
+    gain.gain.setValueAtTime(
+      .25,
+      audioCtx.currentTime
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+      .001,
+      audioCtx.currentTime+.12
+    );
+
+    osc.connect(gain);
+    gain.connect(
+      audioCtx.destination
+    );
+
+    osc.start();
+
+    osc.stop(
+      audioCtx.currentTime+.12
+    );
+
+  }catch(e){}
+}
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+let toastTimer;
+
+function showToast(text){
+
+  toast.textContent=text;
+  toast.style.display="block";
+
+  clearTimeout(toastTimer);
+
+  toastTimer=
+  setTimeout(()=>{
+    toast.style.display="none";
+  },1200);
+}
+
+/* =========================================================
+   SUPABASE SAVE
+========================================================= */
+
+async function saveScore(){
+
+  try{
+
+    await fetch(
+      SUPABASE_URL+
+      "/rest/v1/scores",
+      {
+        method:"POST",
+
+        headers:{
+          "Content-Type":
+          "application/json",
+
+          "apikey":
+          SUPABASE_KEY,
+
+          "Authorization":
+          "Bearer "+SUPABASE_KEY,
+
+          "Prefer":
+          "return=minimal"
+        },
+
+        body:JSON.stringify({
+          name:
+          playerName ||
+          "Người chơi",
+
+          score:score,
+
+          kills:kills,
+
+          wave:match
+        })
+      }
+    );
+
+  }catch(e){
+
+    console.log(
+      "Không thể lưu điểm",
+      e
+    );
+  }
+}
+
+/* =========================================================
+   RESIZE
+========================================================= */
+
+function resize(){
+
+  camera.aspect=
+  innerWidth/innerHeight;
+
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(
+    innerWidth,
+    innerHeight
+  );
+}
+
+/* =========================================================
+   MAIN LOOP
+========================================================= */
+
+function animate(){
+
+  requestAnimationFrame(
+    animate
+  );
+
+  const now=
+  performance.now();
+
+  let dt=
+  (now-lastTime)/1000;
+
+  lastTime=now;
+
+  dt=Math.min(dt,.05);
+
+  if(!running){
+
+    renderer.render(
+      scene,
+      camera
+    );
+
+    return;
+  }
+
+  shootCooldown=
+  Math.max(
+    0,
+    shootCooldown-dt
+  );
+
+  updateTimer(dt);
+
+  updatePlayer(dt);
+
+  updateCamera();
+
+  updateTarget();
+
+  updateZombies(dt);
+
+  updateSpawn(dt);
+
+  updateBullets(dt);
+
+  updateParticles(dt);
+
+  renderer.render(
+    scene,
+    camera
+  );
+}
+
+/* =========================================================
+   START
+========================================================= */
+
+window.addEventListener(
+  "load",
+  ()=>{
+    try{
+      init();
+    }catch(err){
+
+      loading.innerHTML=
+      "<h1>Không tải được game</h1>"+
+      "<p>"+
+      err.message+
+      "</p>";
+    }
+  }
+);
+
+</script>
+
+</body>
+      </html>
